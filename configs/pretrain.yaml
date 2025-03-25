@@ -1,0 +1,94 @@
+#overlap //12
+LEARNING_RATE : 1e-4
+BATCH_SIZE : 64
+NUM_WORKERS : 32
+PATIENCE : 5
+IMAGE_SIZE : 256
+PRETRAINED: False
+TRAIN_LOSS: ["Perceptual","MSE"]
+TRAIN_WEIGHTS_LOSS: [0.2, 0.8]
+VAL_LOSS: ["Perceptual", "MSE"]
+VAL_WEIGHTS_LOSS: [0.2, 0.8]
+AUGMENT: Medium
+VAL_PLOT_PER_EPOCH: 3
+TEST_PLOT_PER_EPOCH: 3
+PLOT_IMAGES: False
+OUTPUT_RANGE: [0,1] #check output of sigmoid
+split: [0.8,0.2,0.2]
+DDP: False
+
+
+
+
+datasets: &DATASET_OPTIONS
+  - &BRAZILPretrain BRAZILPretrain
+  - &BRAZILFinetune BRAZILFinetune
+
+paths: &PATH_OPTIONS
+  # - &MOEI_PATH /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/AirMag_Mag_lag_cut.csv""/home/santosh/Projects/geo_physics/meixia_noise_removal/MAG_Lev_final_tr1_cut.csv
+  # - &MOEI_PATH /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/MAG_LEV_DGRF_surveyline_tie_100m_cut.csv""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/Mag_tie_corr_final_notie_100m_clearr_cut.csv
+  # - &MOEI_PATH /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/MAG_LEV_DGRF_surveyline_100m_cut.csv""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/Mag_tie_corr_final_notie_100m_clearr_cut.csv
+  # - &BRAZIL_PATH_NPY /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/brazil_data/train1_crop_noisy.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/brazil_data/train1_crop_clean.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/brazil_data/train2_crop_noisy.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/data/brazil_data/train2_crop_clean.npy
+  # - &BRAZIL_PATH /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train2_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train3_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train4_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train5_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/val1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_2_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_3_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/val2_crop_final.npy
+  # - &BRAZIL_PATH /home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train2_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train3_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train4_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train5_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_2_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/train6_3_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/val1_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/val2_crop_final.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/MoEI_airborne_magdata/test_crop_final.npy
+  # - &BRAZIL_PATH_v2 /home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1101.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1102.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1103.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1104.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1106.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1107.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1108.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1109.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1101.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1120.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1121.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1071.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1131.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1067.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1113.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1126.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1127.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1129.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1067.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1126.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1127_v2.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1127.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1113.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1127.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1129.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val2_1129.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1101.npy""/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/test1_1111.npy
+  - &BRAZIL_PATH_v2 ["/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1101.npy", 
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1102.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1103.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1101.npy",
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1104.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1106.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1107.npy",
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1108.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1067.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1113.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1067.npy",
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1127.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1121.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1131.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1127_v2.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1127.npy",
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1109.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1120.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1071.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1126.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train1_1129.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/train2_1126.npy",
+
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1113.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1127.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1129.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val2_1129.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/val1_1101.npy",
+
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/test1_1111.npy",
+                    "/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/airmag_recent.npy"]
+
+TASK: Denoising
+MODEL: UNet
+LEARNING_SCHEDULER : CosineAnnealingLR
+STRIDE: 32
+DROP_LAST: True
+NUM_EPOCHS : 30
+CUDA_DEVICE: 0
+NUM_CLASSES: 1
+DATASET: *BRAZILPretrain
+PATH: *BRAZIL_PATH_v2
+SAVE_DIR: "./final_brazil_runs/varying_dataset_size/17_datasets/" #give the path for saving the models
+RUN_NAME: "./final_brazil_runs/varying_dataset_size/17_datasets/"
+LOAD_CHECKPOINT: ""
+
+
+
+# check overlap ratio, sizes - done
+# check dataset sizes - done
+# config and log file - done
+# save training lists and val lists - done
+# plot figures code - done 
+# cleanup other code parts 
+# fix metrics to know if model is improving
