@@ -2,4 +2,3 @@ final_brazil_runs/
 __pycache__/
 train.sh
 finetune.sh
-configs/
