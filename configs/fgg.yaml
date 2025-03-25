@@ -1,0 +1,63 @@
+BATCH_SIZE: 128
+CUDA_DEVICE: 0
+IMAGE_SIZE: 224
+NUM_WORKERS: 16
+
+
+datasets: &DATASET_OPTIONS
+  - &CIFAR10 Cifar10
+  - &CIFAR100 Cifar100
+  - &RSNA Rsna
+  - &HAM HAM
+  - &APTOS APTOS
+  - &CHEXPERT CHEXPERT
+  - &FGVC_v1 FGVC_v1
+  - &FGVC_v2 FGVC_v2
+  - &MNIST MNIST
+  - &EYEPACS EYEPACS
+
+
+RSNA_PATH: "./dataset/rsna18"
+CIFAR_PATH: "./dataset/cifar"
+CIFAR_INDICES: "./dataset/cifar/cifar1098_idxs.npy"
+RSNA_CSV: "./dataset/rsna18/csv/final_dataset_wo_not_normal_cases.csv"
+HAM_TRAIN_FOLDER : "./dataset/ISIC/ISIC2018_Task3_Training_Input/"
+HAM_VAL_FOLDER : "./dataset/ISIC/ISIC2018_Task3_Validation_Input/"
+HAM_TEST_FOLDER : "./dataset/ISIC/ISIC2018_Task3_Test_Input/"
+HAM_TRAIN_CSV : "./dataset/ISIC/ISIC2018_Task3_Training_GroundTruth/ISIC2018_Task3_Training_GroundTruth.csv"
+HAM_VAL_CSV : "./dataset/ISIC/ISIC2018_Task3_Validation_GroundTruth/ISIC2018_Task3_Validation_GroundTruth.csv"
+HAM_TEST_CSV : "./dataset/ISIC/ISIC2018_Task3_Test_GroundTruth/ISIC2018_Task3_Test_GroundTruth.csv"
+APTOS_FOLDER: "./dataset/224_data/DR/aptos/"
+APTOS_CSV: "./dataset/224_data/DR/aptos/aptos_dataset_splits.csv"
+#source /share/sda/nurenzhaksylyk/SEGA2023/SegaAlgorithm/sega/bin/activate
+
+paths: &PATH_OPTIONS
+  - &CIFAR_PATH ./dataset/cifar""./dataset/cifar/cifar1098_idxs.npy
+  - &RSNA_PATH ./dataset/rsna18""./dataset/rsna18/csv/final_dataset_wo_not_normal_cases.csv
+  - &HAM_PATH ./dataset/ISIC/ISIC2018_Task3_Training_Input/""./dataset/ISIC/ISIC2018_Task3_Validation_Input/""./dataset/ISIC/ISIC2018_Task3_Test_Input/""./dataset/ISIC/ISIC2018_Task3_Training_GroundTruth/ISIC2018_Task3_Training_GroundTruth.csv""./dataset/ISIC/ISIC2018_Task3_Validation_GroundTruth/ISIC2018_Task3_Validation_GroundTruth.csv""./dataset/ISIC/ISIC2018_Task3_Test_GroundTruth/ISIC2018_Task3_Test_GroundTruth.csv
+  - &APTOS_PATH ./dataset/224_data/DR/aptos/""./dataset/224_data/DR/aptos/aptos_dataset_splits.csv
+  - &CHEXPERT_PATH /share/nvmedata/santosh/""/share/nvmedata/santosh/""/share/nvmedata/santosh/""/share/nvmedata/santosh/CheXpert-v1.0_224/csv/train.csv""/share/nvmedata/santosh/CheXpert-v1.0_224/csv/valid.csv""/share/nvmedata/santosh/CheXpert-v1.0_224/csv/test_labels_v2.csv
+  - &CIFAR100_PATH ./dataset/cifar""./dataset/cifar/cifar1098_idxs.npy
+  - &FGVC_v1_PATH ./dataset/fgvc
+  - &FGVC_v2_PATH ./dataset/fgvc/""./dataset/fgvc/fgvc_train_val.npy
+  - &MNIST_PATH ./dataset/mnist/""./dataset/mnist/mnist_train_val.npy
+  - &EYEPACS_PATH ./dataset/224_data/DR/eyepacs/""./dataset/224_data/DR/eyepacs/eyepacs_dataset_splits.csv
+
+
+WEIGHT_PATH: "./runs/pre_fgg/CIFAR100/2024-05-03_16-05-22" # Give the path to initial set of models
+PRETRAINING: ImageNet
+MODEL: ResNet50
+CLASSIFICATION: MultiClass
+TASK: Classification
+DATASET: *CIFAR100
+PATH: *CIFAR100_PATH
+test_sort_by: Test Accuracy
+val_sort_by: Val Accuracy
+LOSS: CrossEntropyLoss
+NUM_CLASSES: 100 #2 for RSNA, 10 for CIFAR
+LR1: 0.001
+LR2: 0.000001
+WD: 0.0001
+MOMENTUM: 0.9
+CYCLE: 4
+FGG_SAVE_DIR: "/share/nvmedata/santosh/" #give the directory where you want to save the fgg_generated models
