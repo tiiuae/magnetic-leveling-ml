@@ -60,6 +60,7 @@ OUTPUT_RANGE = config["OUTPUT_RANGE"]
 SPLIT = config["split"]
 # TEST_OVERLAP = int(config["test_overlap"])
 STRIDE = int(config['STRIDE'])
+DROP_LAST = config['DROP_LAST']
 
 if not os.path.exists(os.path.join(os.path.dirname(LOAD_DIR), SAVE_DIR)):
     os.makedirs(os.path.join(os.path.dirname(LOAD_DIR), SAVE_DIR))
@@ -81,7 +82,7 @@ def START_seed(seed_value=9):
 
 def main():
     START_seed()
-    _, _, _, reconstruct_loader, train_dataset, val_dataset, test_dataset = get_dataset(DATASET, PATHS, "Minimal", IMAGE_SIZE, BATCH_SIZE, NUM_WORKERS, TASK, SAVE_DIR, PLOT_IMAGES, SPLIT, RECONSTRUCT_OPTION, LOAD_DIR=LOAD_DIR, output_range = OUTPUT_RANGE, STRIDE = STRIDE)
+    _, _, _, reconstruct_loader, train_dataset, val_dataset, test_dataset = get_dataset(DATASET, PATHS, "Minimal", IMAGE_SIZE, BATCH_SIZE, NUM_WORKERS, TASK, SAVE_DIR, PLOT_IMAGES, SPLIT, RECONSTRUCT_OPTION, LOAD_DIR=LOAD_DIR, output_range = OUTPUT_RANGE, STRIDE = STRIDE, drop_last=DROP_LAST)
     
     #load model
     model = get_model(MODEL, TASK, PRETRAINED, num_classes=NUM_CLASSES, output_range = OUTPUT_RANGE)

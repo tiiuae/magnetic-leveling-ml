@@ -1,3 +1,4 @@
 final_brazil_runs/
 __pycache__/
 configs/
+MODEL_DIR/

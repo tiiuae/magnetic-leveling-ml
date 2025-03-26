@@ -732,6 +732,7 @@ def fft_transform(array):
 
 
 def postprocess(noisy_img, extremes, save_dir, paths, csv=True):
+    breakpoint()
     paths = paths.split('""')
     plt.imsave(os.path.join(save_dir, f'{os.path.basename(paths[1])[:-4]}.png'), noisy_img, cmap='gray')
     print(noisy_img.shape)
@@ -752,60 +753,118 @@ def postprocess(noisy_img, extremes, save_dir, paths, csv=True):
 
 import numpy as np
 
-def   merge_patches_with_median(patches, patch_size, image_size, overlap, mode = 'median'):
+# def   merge_patches_with_median(patches, patch_size, image_size, overlap, mode = 'median'):
+#     """
+#     Merges overlapping patches into a single image using median blending.
+
+#     Args:
+#     - patches (list of np.ndarray): List of patches to be merged.
+#     - patch_size (tuple): Size of each patch (height, width).
+#     - image_size (tuple): Size of the final image (height, width).
+#     - overlap (int): Number of pixels of overlap between patches.
+
+#     Returns:
+#     - np.ndarray: Merged image.
+#     """
+#     # Initialize a list to store values for median calculation
+#     merged_image_values = np.empty((image_size[1], image_size[0], 0), dtype=np.float32)
+
+#     patch_height, patch_width = patch_size, patch_size
+#     image_height, image_width = image_size[1], image_size[0]
+#     step_size = patch_height - overlap  # Calculate the step size
+
+#     # Initialize an empty canvas to store all pixel contributions
+#     contribution_list = [[[] for _ in range(image_width)] for _ in range(image_height)]
+
+#     patch_idx = 0
+#     # Iterate through the image placing patches
+#     for y in range(0, image_height - patch_height + 1, step_size):
+#         for x in range(0, image_width - patch_width + 1, step_size):
+#             # Get the current patch
+#             patch = np.array(patches[patch_idx])[0]
+#             patch_idx += 1
+            
+#             # Add patch to the corresponding positions
+#             for i in range(patch_height):
+#                 for j in range(patch_width):
+#                     contribution_list[y + i][x + j].append(patch[i, j])
+#             # print('contriiiiiiiii',contribution_list[y][x])
+#     # Calculate the median of all contributions at each pixel
+#     merged_image = np.zeros((image_size[1],image_size[0]), dtype=np.float32)
+#     for i in range(image_height):
+#         for j in range(image_width):
+#             if contribution_list[i][j]:
+#                 # Filter contributions to be within 2 standard deviations from the mean
+#                 if mode == 'mean':
+#                     data = np.array(contribution_list[i][j])
+#                     mean_value = np.mean(data)
+#                     std_value = np.std(data)
+#                     filtered_data = data[(data >= mean_value - 2 * std_value) & (data <= mean_value + 2 * std_value)]
+                    
+#                     if len(filtered_data) > 0:
+#                         merged_image[i, j] = np.mean(filtered_data)
+#                     else:
+#                         merged_image[i, j] = mean_value  # Fallback to mean if no data within 2 std
+#                 else:
+#                     merged_image[i, j] = np.median(contribution_list[i][j])
+
+
+#     return merged_image
+
+def merge_patches_with_median(patches, patch_size, image_size, overlap, mode='median'):
     """
-    Merges overlapping patches into a single image using median blending.
+    Merges overlapping patches into a single image using median or mean blending.
 
     Args:
     - patches (list of np.ndarray): List of patches to be merged.
     - patch_size (tuple): Size of each patch (height, width).
     - image_size (tuple): Size of the final image (height, width).
     - overlap (int): Number of pixels of overlap between patches.
+    - mode (str): 'mean' or 'median' for the blending method.
 
     Returns:
     - np.ndarray: Merged image.
     """
-    # Initialize a list to store values for median calculation
-    merged_image_values = np.empty((image_size[1], image_size[0], 0), dtype=np.float32)
-
     patch_height, patch_width = patch_size, patch_size
     image_height, image_width = image_size[1], image_size[0]
     step_size = patch_height - overlap  # Calculate the step size
 
-    # Initialize an empty canvas to store all pixel contributions
-    contribution_list = [[[] for _ in range(image_width)] for _ in range(image_height)]
+    # Initialize arrays to store contributions and counts
+    contribution_values = np.zeros((image_height, image_width), dtype=np.float32)
+    contribution_count = np.zeros((image_height, image_width), dtype=int)
 
     patch_idx = 0
     # Iterate through the image placing patches
     for y in range(0, image_height - patch_height + 1, step_size):
         for x in range(0, image_width - patch_width + 1, step_size):
-            # Get the current patch
             patch = np.array(patches[patch_idx])[0]
             patch_idx += 1
-            
-            # Add patch to the corresponding positions
-            for i in range(patch_height):
-                for j in range(patch_width):
-                    contribution_list[y + i][x + j].append(patch[i, j])
-            # print('contriiiiiiiii',contribution_list[y][x])
-    # Calculate the median of all contributions at each pixel
-    merged_image = np.zeros((image_size[1],image_size[0]), dtype=np.float32)
-    for i in range(image_height):
-        for j in range(image_width):
-            if contribution_list[i][j]:
-                # Filter contributions to be within 2 standard deviations from the mean
-                if mode == 'mean':
-                    data = np.array(contribution_list[i][j])
-                    mean_value = np.mean(data)
-                    std_value = np.std(data)
-                    filtered_data = data[(data >= mean_value - 2 * std_value) & (data <= mean_value + 2 * std_value)]
-                    
-                    if len(filtered_data) > 0:
-                        merged_image[i, j] = np.mean(filtered_data)
-                    else:
-                        merged_image[i, j] = mean_value  # Fallback to mean if no data within 2 std
-                else:
-                    merged_image[i, j] = np.median(contribution_list[i][j])
 
+            # Add patch values to the contribution arrays directly
+            contribution_values[y:y+patch_height, x:x+patch_width] += patch
+            contribution_count[y:y+patch_height, x:x+patch_width] += 1
+
+    # Now compute the final merged image
+    merged_image = np.zeros((image_height, image_width), dtype=np.float32)
+
+    if mode == 'mean':
+        # Efficient mean computation by dividing sum by count
+        # Avoid division by zero by using np.where
+        merged_image = np.divide(contribution_values, contribution_count, where=contribution_count != 0)
+
+
+    elif mode == 'median':
+        # Create a 3D list to store pixel values efficiently
+        max_patches = (image_height // step_size) * (image_width // step_size)
+        pixel_stack = np.full((image_height, image_width, max_patches), np.nan, dtype=np.float32)
+
+        patch_idx = 0
+        for y in range(0, image_height - patch_height + 1, step_size):
+            for x in range(0, image_width - patch_width + 1, step_size):
+                patch = patches[patch_idx]
+                pixel_stack[y:y + patch_height, x:x + patch_width, patch_idx] = patch
+                patch_idx += 1
+        # Compute median along the last axis, ignoring NaN values
+        merged_image = np.nanmedian(pixel_stack, axis=-1)
 
     return merged_image

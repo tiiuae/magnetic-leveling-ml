@@ -10,6 +10,24 @@ import cv2
 import matplotlib.image
 import random
 import numpy as np
+import ignite.metrics
+
+
+def PSNR(preds, targets):
+     psnr = ignite.metrics.PSNR(data_range = targets.max() - targets.min())
+     psnr.update((preds, targets))
+     return psnr.compute()
+def SSIM(preds, targets):
+     psnr = ignite.metrics.SSIM(data_range = targets.max() - targets.min())
+     psnr.update((preds, targets))
+     return psnr.compute()
+
+def L1(preds, targets):
+     mae = ignite.metrics.MeanAbsoluteError()
+     mae.update((preds, targets))
+     return mae.compute()
+
+
 
 def START_seed(seed_value=9):
     seed = seed_value
@@ -174,7 +192,7 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
     minis_list = []
     maxis_list = []
 
-
+    pred_psnr, noisy_psnr, pred_ssim, noisy_ssim, pred_l1, noisy_l1 = [], [], [], [], [], []
     with torch.no_grad():
         for idx, data in tqdm(enumerate(reconstruct_loader), desc=f"Test denoising", total=len(reconstruct_loader)):
             # noisy_patches, original_patches, minis, maxis, width, height = divide_and_resize_v2(data)
@@ -184,27 +202,9 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
             noisy_patches = noisy_patches.float().to(device)
             original_patches = original_patches.float().to(device)
             outputs = model(noisy_patches).to(device)
-
-            # print( noisy_patches.shape, original_patches.shape, outputs.shape)
-            # for i in range(10):
-            #     outputs = (outputs.float().to(device) * (maxi_clean.float().to(device) - mini_clean.float().to(device))) + mini_clean.float().to(device)
-            #     outputs = (outputs - outputs.min())/ (outputs.max() - outputs.min())
-            #     outputs = model(outputs).to(device)
-
-            # outputs_old = (outputs_old - outputs_old.min())/ (outputs_old.max() - outputs_old.min())
             
-            # while True:
-            #     outputs = model(outputs_old).to(device)
-            #     outputs = (outputs - outputs.min())/ (outputs.max() - outputs.min())
-
-            #     print((torch.abs(outputs - outputs_old)).sum())
-            #     if (torch.abs(outputs - outputs_old)).sum() < 1e-3 * 256*256:
-            #         break
-            #     outputs_old = outputs
 
 
-
-                
             outputs = (outputs.float().to(device) * (maxi_noisy.float().to(device) - mini_noisy.float().to(device))) + mini_noisy.float().to(device)
             # noisy_patches = (noisy_patches.float().to(device) * (maxi_noisy.float().to(device) - mini_noisy.float().to(device))) + mini_noisy.float().to(device)
             # original_patches = (original_patches.float().to(device) * (maxi_clean.float().to(device) - mini_clean.float().to(device))) + mini_clean.float().to(device)
@@ -219,10 +219,25 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
             maxis_list.append(maxi_clean.float().to(device))
 
 
+            pred_psnr.append(PSNR(outputs, original_patches))
+            noisy_psnr.append(PSNR(noisy_patches, original_patches))
+
+            pred_ssim.append(SSIM(outputs, original_patches))
+            noisy_ssim.append(SSIM(noisy_patches, original_patches))
+
+            pred_l1.append(L1(outputs, original_patches))
+            noisy_l1.append(L1(noisy_patches, original_patches))
+
+
         denoised_stack = torch.cat(list_of_denoised_patches, dim=0)
         noisy_stack = torch.cat(list_of_noisy_patches, dim=0)
         original_stack = torch.cat(list_of_original_patches, dim=0)
 
+        pred_psnr, noisy_psnr = sum(pred_psnr)/len(pred_psnr), sum(noisy_psnr)/len(noisy_psnr)
+        pred_ssim, noisy_ssim = sum(pred_ssim)/len(pred_ssim), sum(noisy_ssim)/len(noisy_ssim)
+        pred_l1, noisy_l1 = sum(pred_l1)/len(pred_l1), sum(noisy_l1)/len(noisy_l1)
+
+        breakpoint()
         # num_images = 20
         # # indices = torch.randperm(denoised_stack.size(0))
         # noisy_patches_subset = noisy_stack[indices]
@@ -264,7 +279,31 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
                 noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
 
 
-        breakpoint()
+
+        mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
+
+        denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
+        original_tensor = torch.tensor(original_array, dtype=torch.float32)
+        noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
+
+        # Mask out NaNs
+        denoised_tensor[~mask] = 0
+        original_tensor[~mask] = 0
+        noisy_tensor[~mask] = 0
+
+        # Ensure shape is (B, C, H, W) - You need the original image size
+        H, W = denoised_array.shape  # Replace with your actual image size
+
+        # Reshape to 4D tensor (Batch, Channels, Height, Width)
+        denoised_tensor = denoised_tensor.view(1, 1, H, W)
+        original_tensor = original_tensor.view(1, 1, H, W)
+        noisy_tensor = noisy_tensor.view(1, 1, H, W)
+        print(f"Noisy PSNR: {PSNR(noisy_tensor, original_tensor)}, Denoised PSNR: {PSNR(denoised_tensor, original_tensor)}")
+        print(f"Noisy SSIM: {SSIM(noisy_tensor, original_tensor)}, Denoised SSIM: {SSIM(denoised_tensor, original_tensor)}")
+        print(f"Noisy L1: {L1(noisy_tensor, original_tensor)}, Denoised L1: {L1(denoised_tensor, original_tensor)}")
+
+        breakpoint()    
+
 
         return [denoised_array, original_array, noisy_array]
 
