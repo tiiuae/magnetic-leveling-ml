@@ -258,7 +258,6 @@ class BrazilDatasetFinetuning(Dataset):
         self.split = split
         for filepath in datasets:
             data = np.load(filepath)
-            # print(data.shape)
             processed_data, self.padded_data, scale_info, pad_info = self.preprocess_grid(data, self.patch_size, self.stride, fill=self.fill_value)
             self.preprocessed_datasets.append(processed_data)
             self.scaling_info.append(scale_info)
@@ -368,6 +367,10 @@ class BrazilDatasetFinetuning(Dataset):
         # breakpoint()
         grid_v2 = np.nan_to_num(grid_v1, nan=fill)
         # print(grid.shape, grid_v1.shape, grid_v2.shape)
+        pad_left = (new_width - grid.shape[0]) // 2
+        pad_right = new_width - grid.shape[0] - pad_left
+        pad_top = (new_height - grid.shape[1]) // 2
+        pad_bottom = new_height - grid.shape[1] - pad_top
         return grid_v2, grid_v1, [mini, maxi], [pad_left, pad_right, pad_top, pad_bottom]
 
     def calculate_num_patches(self, shape):

@@ -285,6 +285,60 @@ def efficient_csv_to_numpy(filename):
     return clean_array, noisy_array
 
 
+def plot_metrics(final_results, save_dir, name=None):
+    # Extract PSNR, SSIM, and L1 values
+    noisy_psnr = [res[0][0] for res in final_results]
+    denoised_psnr = [res[0][1] for res in final_results]
+    
+    noisy_ssim = [res[1][0] for res in final_results]
+    denoised_ssim = [res[1][1] for res in final_results]
+    
+    noisy_l1 = [res[2][0] for res in final_results]
+    denoised_l1 = [res[2][1] for res in final_results]
+    
+    epochs = range(1, len(final_results) + 1)
+    
+    # Plot PSNR
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_psnr, marker='o', linestyle='-', label='Noisy PSNR', color='b')
+    plt.plot(epochs, denoised_psnr, marker='s', linestyle='--', label='Denoised PSNR', color='r')
+    plt.title('PSNR Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('PSNR', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_PSNR.png' if name else 'PSNR.png'))
+    plt.close()
+    
+    # Plot SSIM
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_ssim, marker='o', linestyle='-', label='Noisy SSIM', color='b')
+    plt.plot(epochs, denoised_ssim, marker='s', linestyle='--', label='Denoised SSIM', color='r')
+    plt.title('SSIM Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('SSIM', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_SSIM.png' if name else 'SSIM.png'))
+    plt.close()
+    
+    # Plot L1 Loss
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_l1, marker='o', linestyle='-', label='Noisy L1', color='b')
+    plt.plot(epochs, denoised_l1, marker='s', linestyle='--', label='Denoised L1', color='r')
+    plt.title('L1 Loss Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('L1 Loss', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_L1.png' if name else 'L1.png'))
+    plt.close()
 
 
 
@@ -731,27 +785,17 @@ def fft_transform(array):
 
 
 
-def postprocess(noisy_img, extremes, save_dir, paths, csv=True):
-    breakpoint()
-    paths = paths.split('""')
-    plt.imsave(os.path.join(save_dir, f'{os.path.basename(paths[1])[:-4]}.png'), noisy_img, cmap='gray')
-    print(noisy_img.shape)
-    # noisy_img_v2 = noisy_img.astype(np.float64) * (extremes[1] - extremes[0]) + extremes[0]
+def postprocess(noisy_img, save_dir, paths, csv=True):
     if csv==True:
-        breakpoint()
         noisy_image_T = noisy_img
         rows, cols = noisy_image_T.shape
+        breakpoint()
         df_ori = pd.read_csv('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/airmag_recent_MAGCOR_IGRF.csv')#/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/csvs/test1_1111.csv
-        print(df_ori)
         df = pd.DataFrame({'X': np.repeat(np.arange(rows), cols), 'Y': np.tile(np.arange(cols), rows),'MAGIGRF': noisy_image_T.flatten()})
         df_cleaned = df.dropna(subset=['MAGIGRF'])
-        print(df_cleaned)
         df_cleaned = df_cleaned.reset_index(drop=True)
         df_cleaned[['X', 'Y']] = df_ori[['X', 'Y']]
         df_cleaned.to_csv(os.path.join(save_dir, 'att_unet_results_512_v2.csv'), index=False)
-
-
-import numpy as np
 
 # def   merge_patches_with_median(patches, patch_size, image_size, overlap, mode = 'median'):
 #     """

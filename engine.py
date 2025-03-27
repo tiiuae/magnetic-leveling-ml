@@ -11,6 +11,7 @@ import matplotlib.image
 import random
 import numpy as np
 import ignite.metrics
+import numpy.ma as ma
 
 
 def PSNR(preds, targets):
@@ -191,24 +192,18 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
     list_of_denoised_patches = []
     minis_list = []
     maxis_list = []
+    final_dir = save_dir.get('final_dir')
+    file_name = os.path.basename(save_dir.get('path'))[:-4]
+    print(final_dir, file_name)
 
-    pred_psnr, noisy_psnr, pred_ssim, noisy_ssim, pred_l1, noisy_l1 = [], [], [], [], [], []
     with torch.no_grad():
         for idx, data in tqdm(enumerate(reconstruct_loader), desc=f"Test denoising", total=len(reconstruct_loader)):
-            # noisy_patches, original_patches, minis, maxis, width, height = divide_and_resize_v2(data)
-            # noisy_patches = noisy_patches.view(-1, 1, IMAGE_SIZE, IMAGE_SIZE).to(device)
-            # original_patches = original_patches.view(-1, 1, IMAGE_SIZE, IMAGE_SIZE).to(device)
             noisy_patches, original_patches, [mini_noisy, mini_clean, maxi_noisy, maxi_clean], [width, height] = data
             noisy_patches = noisy_patches.float().to(device)
             original_patches = original_patches.float().to(device)
             outputs = model(noisy_patches).to(device)
             
-
-
             outputs = (outputs.float().to(device) * (maxi_noisy.float().to(device) - mini_noisy.float().to(device))) + mini_noisy.float().to(device)
-            # noisy_patches = (noisy_patches.float().to(device) * (maxi_noisy.float().to(device) - mini_noisy.float().to(device))) + mini_noisy.float().to(device)
-            # original_patches = (original_patches.float().to(device) * (maxi_clean.float().to(device) - mini_clean.float().to(device))) + mini_clean.float().to(device)
-
             noisy_patches = torch.where(noisy_patches == 0, 0, (noisy_patches.float().to(device) * (maxi_noisy.float().to(device) - mini_noisy.float().to(device)) + mini_noisy.float().to(device))) 
             original_patches = torch.where(original_patches == 0, 0, (original_patches.float().to(device) * (maxi_clean.float().to(device) - mini_clean.float().to(device)) + mini_clean.float().to(device))) 
 
@@ -218,47 +213,18 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
             minis_list.append(mini_clean.float().to(device))
             maxis_list.append(maxi_clean.float().to(device))
 
-
-            pred_psnr.append(PSNR(outputs, original_patches))
-            noisy_psnr.append(PSNR(noisy_patches, original_patches))
-
-            pred_ssim.append(SSIM(outputs, original_patches))
-            noisy_ssim.append(SSIM(noisy_patches, original_patches))
-
-            pred_l1.append(L1(outputs, original_patches))
-            noisy_l1.append(L1(noisy_patches, original_patches))
-
-
         denoised_stack = torch.cat(list_of_denoised_patches, dim=0)
         noisy_stack = torch.cat(list_of_noisy_patches, dim=0)
         original_stack = torch.cat(list_of_original_patches, dim=0)
 
-        pred_psnr, noisy_psnr = sum(pred_psnr)/len(pred_psnr), sum(noisy_psnr)/len(noisy_psnr)
-        pred_ssim, noisy_ssim = sum(pred_ssim)/len(pred_ssim), sum(noisy_ssim)/len(noisy_ssim)
-        pred_l1, noisy_l1 = sum(pred_l1)/len(pred_l1), sum(noisy_l1)/len(noisy_l1)
-
-        breakpoint()
-        # num_images = 20
-        # # indices = torch.randperm(denoised_stack.size(0))
-        # noisy_patches_subset = noisy_stack[indices]
-        # outputs_subset = denoised_stack[indices]
-        # original_patches_subset = original_stack[indices]
-
-
-        save_path = os.path.join(save_dir, f'epoch_test_test_denoise.png')
-        # IMAGE_SIZE = 128
-        # save_subplot(noisy_patches_subset, outputs_subset, original_patches_subset, save_path, num_images)
+        # save_path = os.path.join(save_dir, f'epoch_test_test_denoise.png')
         denoised_image = merge_patches_with_median(denoised_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        matplotlib.image.imsave(f'{save_dir}/denoised_airmag_recent.png', denoised_image)
         original_image = merge_patches_with_median(original_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        matplotlib.image.imsave(f'{save_dir}/original_airmag_recent.png', original_image)
         noisy_image = merge_patches_with_median(noisy_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        matplotlib.image.imsave(f'{save_dir}/noisy_airmag_recent.png', noisy_image)
         original_array = np.where(original_image == 0, np.nan, original_image)
         noisy_array = np.where(noisy_image == 0, np.nan, noisy_image)
         denoised_array = np.where(np.isnan(test_dataset.padded_data[:,:,1]), np.nan, denoised_image)
-        # return [denoised_array[5:-5, 1:-1], original_array[5:-5, 1:-1], noisy_array[5:-5,1:-1]]
-        print(denoised_array.shape)
+
         if test_dataset.padding_info[0][1]!=0:
             if test_dataset.padding_info[0][3]!=0:
                 denoised_array = denoised_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
@@ -278,7 +244,12 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
                 original_array = original_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
                 noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
 
-
+        masked_array = ma.masked_invalid(noisy_array)
+        matplotlib.image.imsave(f'{final_dir}/noisy_{file_name}.png', masked_array)
+        masked_array = ma.masked_invalid(original_array)
+        matplotlib.image.imsave(f'{final_dir}/original_{file_name}.png', masked_array)
+        masked_array = ma.masked_invalid(denoised_array)
+        matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
 
         mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
 
@@ -286,26 +257,23 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         original_tensor = torch.tensor(original_array, dtype=torch.float32)
         noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
 
-        # Mask out NaNs
         denoised_tensor[~mask] = 0
         original_tensor[~mask] = 0
         noisy_tensor[~mask] = 0
-
-        # Ensure shape is (B, C, H, W) - You need the original image size
         H, W = denoised_array.shape  # Replace with your actual image size
-
-        # Reshape to 4D tensor (Batch, Channels, Height, Width)
         denoised_tensor = denoised_tensor.view(1, 1, H, W)
         original_tensor = original_tensor.view(1, 1, H, W)
         noisy_tensor = noisy_tensor.view(1, 1, H, W)
-        print(f"Noisy PSNR: {PSNR(noisy_tensor, original_tensor)}, Denoised PSNR: {PSNR(denoised_tensor, original_tensor)}")
-        print(f"Noisy SSIM: {SSIM(noisy_tensor, original_tensor)}, Denoised SSIM: {SSIM(denoised_tensor, original_tensor)}")
-        print(f"Noisy L1: {L1(noisy_tensor, original_tensor)}, Denoised L1: {L1(denoised_tensor, original_tensor)}")
 
-        breakpoint()    
+        noisy_psnr, denoised_psnr = PSNR(noisy_tensor, original_tensor), PSNR(denoised_tensor, original_tensor)
+        noisy_ssim, denoised_ssim = SSIM(noisy_tensor, original_tensor), SSIM(denoised_tensor, original_tensor)
+        noisy_l1, denoised_l1 = L1(noisy_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3]), L1(denoised_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3])
 
+        print(f"Noisy PSNR: {noisy_psnr}, Denoised PSNR: {denoised_psnr}")
+        print(f"Noisy SSIM: {noisy_ssim}, Denoised SSIM: {denoised_ssim}")
+        print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
 
-        return [denoised_array, original_array, noisy_array]
+        return [denoised_array, original_array, noisy_array, [[noisy_psnr, denoised_psnr], [noisy_ssim, denoised_ssim], [noisy_l1, denoised_l1]]]
 
 
 def trainer(
@@ -331,8 +299,8 @@ def trainer(
         val_dataset = None,
         pads = None,
         test_overlap = None,
-        image_size = None
-
+        image_size = None,
+        **kwargs
 ):
     """
     Train and evaluate model.
@@ -363,7 +331,7 @@ def trainer(
         model.to(device)
         torch.compile(model)
         model.eval()
-        images = rec_step(model=model, test_dataset=test_dataset, reconstruct_loader=reconstruct_loader, device=device, save_dir=os.path.dirname(save_dir) ,IMAGE_SIZE=image_size, pads = pads, test_overlap = test_overlap)
+        images = rec_step(model=model, test_dataset=test_dataset, reconstruct_loader=reconstruct_loader, device=device, save_dir=kwargs ,IMAGE_SIZE=image_size, pads = pads, test_overlap = test_overlap)
         return images
 
     for epoch in range(epochs + 1):
