@@ -390,7 +390,7 @@ def trainer(
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(checkpoint, os.path.join(save_dir, f"best_checkpoint.pth"))
+        torch.save(checkpoint, os.path.join(save_dir, f"best_checkpoint.pth"))
 
         print(best_val_loss)
         # torch.save(checkpoint, os.path.join(save_dir, f"checkpoint_{epoch}.pth"))
