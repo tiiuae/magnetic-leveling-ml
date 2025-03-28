@@ -88,7 +88,7 @@ def START_seed(seed_value=9):
 def main():
     START_seed()
     shutil.copy(args.config, f'{FINAL_DIR}/config.yaml')
-    # sys.stdout = open(f'{FINAL_DIR}/logfile', 'w')
+    sys.stdout = open(f'{FINAL_DIR}/logfile', 'w')
     pth_files_sorted = sorted(directory.rglob("checkpoint_*.pth"), key=lambda x: int(x.name.split('_')[1].split('.')[0]))
 
     final_results = []
@@ -153,7 +153,7 @@ def main():
         final_results.append(result)
         print(result)
 
-    plot_metrics(results=final_results, save_dir=FINAL_DIR)
+    plot_metrics(final_results=final_results, save_dir=FINAL_DIR)
 
 if __name__ == "__main__":
     main()

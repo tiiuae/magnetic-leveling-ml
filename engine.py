@@ -265,6 +265,11 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         original_tensor = original_tensor.view(1, 1, H, W)
         noisy_tensor = noisy_tensor.view(1, 1, H, W)
 
+        # noisy_tensor = (noisy_tensor - noisy_tensor.min())/ (noisy_tensor.max() - noisy_tensor.min())
+        # original_tensor = (original_tensor - original_tensor.min())/ (original_tensor.max() - original_tensor.min())
+        # noisy_tensor = (denoised_tensor - denoised_tensor.min())/ (denoised_tensor.max() - denoised_tensor.min())
+
+
         noisy_psnr, denoised_psnr = PSNR(noisy_tensor, original_tensor), PSNR(denoised_tensor, original_tensor)
         noisy_ssim, denoised_ssim = SSIM(noisy_tensor, original_tensor), SSIM(denoised_tensor, original_tensor)
         noisy_l1, denoised_l1 = L1(noisy_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3]), L1(denoised_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3])
