@@ -12,6 +12,11 @@ import random
 import numpy as np
 import ignite.metrics
 import numpy.ma as ma
+from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
+import numpy as np
+import torch
+import numpy.ma as ma
+import matplotlib.image
 
 
 def PSNR(preds, targets):
@@ -251,37 +256,84 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         # matplotlib.image.imsave(f'{final_dir}/noisy_{file_name}.png', masked_array)
         # masked_array = ma.masked_invalid(original_array)
         # matplotlib.image.imsave(f'{final_dir}/original_{file_name}.png', masked_array)
+
+
+
+        # masked_array = ma.masked_invalid(denoised_array)
+        # matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
+        # original_array = np.load(save_dir.get('path'))[:,:,1]
+        # noisy_array = np.load(save_dir.get('path'))[:,:,0]
+        # mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
+
+        # denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
+        # original_tensor = torch.tensor(original_array, dtype=torch.float32)
+        # noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
+
+        # denoised_tensor[~mask] = 0
+        # original_tensor[~mask] = 0
+        # noisy_tensor[~mask] = 0
+        # H, W = denoised_array.shape  # Replace with your actual image size
+        # denoised_tensor = denoised_tensor.view(1, 1, H, W)
+        # original_tensor = original_tensor.view(1, 1, H, W)
+        # noisy_tensor = noisy_tensor.view(1, 1, H, W)
+
+        # # noisy_tensor = (noisy_tensor - noisy_tensor.min())/ (noisy_tensor.max() - noisy_tensor.min())
+        # # original_tensor = (original_tensor - original_tensor.min())/ (original_tensor.max() - original_tensor.min())
+        # # denoised_tensor = (denoised_tensor - denoised_tensor.min())/ (denoised_tensor.max() - denoised_tensor.min())
+
+
+        # noisy_psnr, denoised_psnr = PSNR(noisy_tensor, original_tensor), PSNR(denoised_tensor, original_tensor)
+        # noisy_ssim, denoised_ssim = SSIM(noisy_tensor, original_tensor), SSIM(denoised_tensor, original_tensor)
+        # noisy_l1, denoised_l1 = L1(noisy_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3]), L1(denoised_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3])
+
+        # print(f"Noisy PSNR: {noisy_psnr}, Denoised PSNR: {denoised_psnr}")
+        # print(f"Noisy SSIM: {noisy_ssim}, Denoised SSIM: {denoised_ssim}")
+        # print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
+
+
+        # Mask invalid values
         masked_array = ma.masked_invalid(denoised_array)
         matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
 
-        original_array = np.load('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/airmag_recent.npy')[:,:,1]
-        noisy_array = np.load('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/airmag_recent.npy')[:,:,0]
+        # Load arrays
+        original_array = np.load(save_dir.get('path'))[:, :, 1]
+        noisy_array = np.load(save_dir.get('path'))[:, :, 0]
+
+        # Create mask
         mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
 
-        denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
-        original_tensor = torch.tensor(original_array, dtype=torch.float32)
-        noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
+        # Convert to tensors
+        # denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
+        # original_tensor = torch.tensor(original_array, dtype=torch.float32)
+        # noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
 
-        denoised_tensor[~mask] = 0
-        original_tensor[~mask] = 0
-        noisy_tensor[~mask] = 0
-        H, W = denoised_array.shape  # Replace with your actual image size
-        denoised_tensor = denoised_tensor.view(1, 1, H, W)
-        original_tensor = original_tensor.view(1, 1, H, W)
-        noisy_tensor = noisy_tensor.view(1, 1, H, W)
+        # Apply mask
+        denoised_array[~mask] = 0
+        original_array[~mask] = 0
+        noisy_array[~mask] = 0
 
-        # noisy_tensor = (noisy_tensor - noisy_tensor.min())/ (noisy_tensor.max() - noisy_tensor.min())
-        # original_tensor = (original_tensor - original_tensor.min())/ (original_tensor.max() - original_tensor.min())
-        # noisy_tensor = (denoised_tensor - denoised_tensor.min())/ (denoised_tensor.max() - denoised_tensor.min())
+        # # Reshape tensors
+        # H, W = denoised_array.shape
+        # denoised_tensor = denoised_tensor.view(1, 1, H, W)
+        # original_tensor = original_tensor.view(1, 1, H, W)
+        # noisy_tensor = noisy_tensor.view(1, 1, H, W)
+        denoised_array = denoised_array.astype(np.float32)
+        original_array = original_array.astype(np.float32)
+        noisy_array = noisy_array.astype(np.float32)
+        # Calculate PSNR, SSIM, L1
 
+        maxi = max(denoised_array.max(), original_array.max(), noisy_array.max())
+        mini = min(denoised_array.min(), original_array.min(), noisy_array.min())
 
-        noisy_psnr, denoised_psnr = PSNR(noisy_tensor, original_tensor), PSNR(denoised_tensor, original_tensor)
-        noisy_ssim, denoised_ssim = SSIM(noisy_tensor, original_tensor), SSIM(denoised_tensor, original_tensor)
-        noisy_l1, denoised_l1 = L1(noisy_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3]), L1(denoised_tensor, original_tensor)/ (original_tensor.shape[2] * original_tensor.shape[3])
+        noisy_psnr, denoised_psnr = psnr(noisy_array, original_array, data_range=maxi -mini), psnr(denoised_array, original_array, data_range = maxi - mini)
+        noisy_ssim, denoised_ssim = ssim(noisy_array, original_array, data_range=maxi - mini), ssim(denoised_array, original_array, data_range=maxi - mini)
+        noisy_l1, denoised_l1 = np.mean(np.abs(noisy_array - original_array)), np.mean(np.abs(denoised_array - original_array))
 
+        # Print results
         print(f"Noisy PSNR: {noisy_psnr}, Denoised PSNR: {denoised_psnr}")
         print(f"Noisy SSIM: {noisy_ssim}, Denoised SSIM: {denoised_ssim}")
         print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
+
 
         return [denoised_array, original_array, noisy_array, [[noisy_psnr, denoised_psnr], [noisy_ssim, denoised_ssim], [noisy_l1, denoised_l1]]]
 
