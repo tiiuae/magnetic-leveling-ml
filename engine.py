@@ -193,7 +193,7 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
     minis_list = []
     maxis_list = []
     final_dir = save_dir.get('final_dir')
-    file_name = os.path.basename(save_dir.get('path'))[:-4]
+    file_name = os.path.basename(str(save_dir.get('path')))[:-4]
     print(final_dir, file_name)
 
     with torch.no_grad():

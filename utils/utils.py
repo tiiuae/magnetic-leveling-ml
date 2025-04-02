@@ -785,17 +785,16 @@ def fft_transform(array):
 
 
 
-def postprocess(noisy_img, save_dir, paths, csv=True):
-    if csv==True:
-        noisy_image_T = noisy_img
+def postprocess(noisy_img, save_dir, paths, csv=''):
+    if csv!='':
+        noisy_image_T = noisy_img[0]
         rows, cols = noisy_image_T.shape
-        breakpoint()
-        df_ori = pd.read_csv('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/airmag_recent_MAGCOR_IGRF.csv')#/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/csvs/test1_1111.csv
+        df_ori = pd.read_csv(csv)#/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/csvs/test1_1111.csv
         df = pd.DataFrame({'X': np.repeat(np.arange(rows), cols), 'Y': np.tile(np.arange(cols), rows),'MAGIGRF': noisy_image_T.flatten()})
         df_cleaned = df.dropna(subset=['MAGIGRF'])
         df_cleaned = df_cleaned.reset_index(drop=True)
         df_cleaned[['X', 'Y']] = df_ori[['X', 'Y']]
-        df_cleaned.to_csv(os.path.join(save_dir, 'att_unet_results_512_v2.csv'), index=False)
+        df_cleaned.to_csv(os.path.join(save_dir, paths), index=False)
 
 # def   merge_patches_with_median(patches, patch_size, image_size, overlap, mode = 'median'):
 #     """

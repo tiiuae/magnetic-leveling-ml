@@ -144,7 +144,6 @@ def main():
                 path = path,
                 )    
             metrics.append(results[3])
-            postprocess(results[0], FINAL_DIR, path, csv=CREATE_CSV)
             print(metrics)
         data_np = np.array(metrics)  # Convert list to NumPy array
         averages = np.mean(data_np, axis=0)  # Compute mean along the first axis
@@ -152,8 +151,7 @@ def main():
         result = averages.tolist()  # Convert back to list
         final_results.append(result)
         print(result)
-
-    plot_metrics(final_results=final_results, save_dir=FINAL_DIR)
+        plot_metrics(final_results=final_results, save_dir=FINAL_DIR)
 
 if __name__ == "__main__":
     main()

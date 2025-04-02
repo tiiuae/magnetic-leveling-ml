@@ -129,9 +129,11 @@ def main():
         pads = None,
         test_dataset = test_dataset,
         test_overlap = STRIDE,
-        image_size = IMAGE_SIZE
+        image_size = IMAGE_SIZE,
+        final_dir = FINAL_DIR,
+        path = LOAD_DIR,
         )
-    postprocess(results[0], _, FINAL_DIR, PATHS, csv=CREATE_CSV)
+    postprocess([results[0], results[1], results[2]], FINAL_DIR, 'airmag_denoised_5.csv', csv=CREATE_CSV)
 if __name__ == "__main__":
     main()
 
