@@ -296,7 +296,7 @@ def plot_metrics(final_results, save_dir, name=None):
     noisy_l1 = [res[2][0] for res in final_results]
     denoised_l1 = [res[2][1] for res in final_results]
     
-    epochs = range(1, len(final_results) + 1)
+    epochs = range(0, len(final_results))
     
     # Plot PSNR
     plt.figure(figsize=(10, 6))

@@ -15,11 +15,15 @@ import numpy.ma as ma
 
 
 def PSNR(preds, targets):
-     psnr = ignite.metrics.PSNR(data_range = targets.max() - targets.min())
+     maxi = max(preds.max(), targets.max())
+     mini = min(preds.min(), targets.min())
+     psnr = ignite.metrics.PSNR(data_range =maxi - mini)
      psnr.update((preds, targets))
      return psnr.compute()
 def SSIM(preds, targets):
-     psnr = ignite.metrics.SSIM(data_range = targets.max() - targets.min())
+     maxi = max(preds.max(), targets.max())
+     mini = min(preds.min(), targets.min())
+     psnr = ignite.metrics.SSIM(data_range = maxi - mini)
      psnr.update((preds, targets))
      return psnr.compute()
 
@@ -216,41 +220,42 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         denoised_stack = torch.cat(list_of_denoised_patches, dim=0)
         noisy_stack = torch.cat(list_of_noisy_patches, dim=0)
         original_stack = torch.cat(list_of_original_patches, dim=0)
-
         # save_path = os.path.join(save_dir, f'epoch_test_test_denoise.png')
-        denoised_image = merge_patches_with_median(denoised_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        original_image = merge_patches_with_median(original_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        noisy_image = merge_patches_with_median(noisy_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - IMAGE_SIZE//test_overlap, mode='median')
-        original_array = np.where(original_image == 0, np.nan, original_image)
-        noisy_array = np.where(noisy_image == 0, np.nan, noisy_image)
+        denoised_image = merge_patches_with_median(denoised_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - test_overlap, mode='median')
+        # original_image = merge_patches_with_median(original_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - test_overlap, mode='median')
+        # noisy_image = merge_patches_with_median(noisy_stack, IMAGE_SIZE, [width, height], IMAGE_SIZE - test_overlap, mode='median')
+        # original_array = np.where(original_image == 0, np.nan, original_image)
+        # noisy_array = np.where(noisy_image == 0, np.nan, noisy_image)
         denoised_array = np.where(np.isnan(test_dataset.padded_data[:,:,1]), np.nan, denoised_image)
 
         if test_dataset.padding_info[0][1]!=0:
             if test_dataset.padding_info[0][3]!=0:
                 denoised_array = denoised_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
-                original_array = original_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
-                noisy_array = noisy_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
+                # original_array = original_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
+                # noisy_array = noisy_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
             else:
                 denoised_array = denoised_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:]
-                original_array = original_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:]
-                noisy_array = noisy_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:]
+                # original_array = original_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:]
+                # noisy_array = noisy_array[test_dataset.padding_info[0][0]:-test_dataset.padding_info[0][1], test_dataset.padding_info[0][2]:]
         else:
             if test_dataset.padding_info[0][3]!=0:
                 denoised_array = denoised_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
-                original_array = original_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
-                noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
+                # original_array = original_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
+                # noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:-test_dataset.padding_info[0][3]]
             else:
                 denoised_array = denoised_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
-                original_array = original_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
-                noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
+                # original_array = original_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
+                # noisy_array = noisy_array[test_dataset.padding_info[0][0]:, test_dataset.padding_info[0][2]:]
 
-        masked_array = ma.masked_invalid(noisy_array)
-        matplotlib.image.imsave(f'{final_dir}/noisy_{file_name}.png', masked_array)
-        masked_array = ma.masked_invalid(original_array)
-        matplotlib.image.imsave(f'{final_dir}/original_{file_name}.png', masked_array)
+        # masked_array = ma.masked_invalid(noisy_array)
+        # matplotlib.image.imsave(f'{final_dir}/noisy_{file_name}.png', masked_array)
+        # masked_array = ma.masked_invalid(original_array)
+        # matplotlib.image.imsave(f'{final_dir}/original_{file_name}.png', masked_array)
         masked_array = ma.masked_invalid(denoised_array)
         matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
 
+        original_array = np.load('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/airmag_recent.npy')[:,:,1]
+        noisy_array = np.load('/home/santosh/Projects/geo_physics/meixia_noise_removal/brazil_v2_data/arrays/airmag_recent.npy')[:,:,0]
         mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
 
         denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
