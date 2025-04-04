@@ -283,10 +283,10 @@ def efficient_csv_to_numpy(filename):
     noisy_array = np.array(noisy_values).reshape((num_y, num_x))
 
     return clean_array, noisy_array
-
+import matplotlib.pyplot as plt
 
 def plot_metrics(final_results, save_dir, name=None):
-    # Extract PSNR, SSIM, and L1 values
+    # Extract values for each metric from the results
     noisy_psnr = [res[0][0] for res in final_results]
     denoised_psnr = [res[0][1] for res in final_results]
     
@@ -296,6 +296,22 @@ def plot_metrics(final_results, save_dir, name=None):
     noisy_l1 = [res[2][0] for res in final_results]
     denoised_l1 = [res[2][1] for res in final_results]
     
+    noisy_mse = [res[3][0] for res in final_results]
+    denoised_mse = [res[3][1] for res in final_results]
+    
+    noisy_rmse = [res[4][0] for res in final_results]
+    denoised_rmse = [res[4][1] for res in final_results]
+    
+    rer = [res[5][0] for res in final_results]
+    
+    snr_noisy = [res[6][0] for res in final_results]
+    snr_denoised = [res[6][1] for res in final_results]
+    
+    delta_snr = [res[7][0] for res in final_results]
+    
+    noisy_mssim = [res[8][0] for res in final_results]
+    denoised_mssim = [res[8][1] for res in final_results]
+        
     epochs = range(0, len(final_results))
     
     # Plot PSNR
@@ -339,6 +355,90 @@ def plot_metrics(final_results, save_dir, name=None):
     plt.yticks(fontsize=10)
     plt.savefig(save_dir + '/' + (name + '_L1.png' if name else 'L1.png'))
     plt.close()
+
+    # Plot MSE (Mean Squared Error)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_mse, marker='o', linestyle='-', label='Noisy MSE', color='b')
+    plt.plot(epochs, denoised_mse, marker='s', linestyle='--', label='Denoised MSE', color='r')
+    plt.title('MSE Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('MSE', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_MSE.png' if name else 'MSE.png'))
+    plt.close()
+
+    # Plot RMSE (Root Mean Squared Error)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_rmse, marker='o', linestyle='-', label='Noisy RMSE', color='b')
+    plt.plot(epochs, denoised_rmse, marker='s', linestyle='--', label='Denoised RMSE', color='r')
+    plt.title('RMSE Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('RMSE', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_RMSE.png' if name else 'RMSE.png'))
+    plt.close()
+
+    # Plot Residual Energy Ratio (RER)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, rer, marker='o', linestyle='-', label='Residual Energy Ratio (RER)', color='b')
+    plt.title('Residual Energy Ratio Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('RER', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_RER.png' if name else 'RER.png'))
+    plt.close()
+
+    # Plot SNR (Signal-to-Noise Ratio)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, snr_noisy, marker='o', linestyle='-', label='Noisy SNR', color='b')
+    plt.plot(epochs, snr_denoised, marker='s', linestyle='--', label='Denoised SNR', color='r')
+    plt.title('SNR Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('SNR', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_SNR.png' if name else 'SNR.png'))
+    plt.close()
+
+    # Plot ΔSNR (SNR Improvement)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, delta_snr, marker='o', linestyle='-', label='ΔSNR (Improvement)', color='b')
+    plt.title('SNR Improvement (ΔSNR) Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('ΔSNR', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_ΔSNR.png' if name else 'ΔSNR.png'))
+    plt.close()
+
+    
+    # Plot SSIM
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, noisy_mssim, marker='o', linestyle='-', label='Noisy MSSIM', color='b')
+    plt.plot(epochs, denoised_mssim, marker='s', linestyle='--', label='Denoised MSSIM', color='r')
+    plt.title('SSIM Over Epochs', fontsize=14)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('MSSIM', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.savefig(save_dir + '/' + (name + '_MSSIM.png' if name else 'MSSIM.png'))
+    plt.close()
+    
 
 
 

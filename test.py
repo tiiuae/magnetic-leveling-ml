@@ -20,7 +20,7 @@ import json
 import time
 import os
 from utils.utils import load_model
-
+from dataset import BrazilDatasetFinetuning
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='./configs/test.yaml', metavar='DIR', help='configs')
@@ -82,58 +82,108 @@ def START_seed(seed_value=9):
 
 def main():
     START_seed()
-    _, _, _, reconstruct_loader, train_dataset, val_dataset, test_dataset = get_dataset(DATASET, PATHS, "Minimal", IMAGE_SIZE, BATCH_SIZE, NUM_WORKERS, TASK, SAVE_DIR, PLOT_IMAGES, SPLIT, RECONSTRUCT_OPTION, LOAD_DIR=LOAD_DIR, output_range = OUTPUT_RANGE, STRIDE = STRIDE, drop_last=DROP_LAST)
+
+
+
+
+    # _, _, _, reconstruct_loader, train_dataset, val_dataset, test_dataset = get_dataset(DATASET, PATHS, "Minimal", IMAGE_SIZE, BATCH_SIZE, NUM_WORKERS, TASK, SAVE_DIR, PLOT_IMAGES, SPLIT, RECONSTRUCT_OPTION, LOAD_DIR=LOAD_DIR, output_range = OUTPUT_RANGE, STRIDE = STRIDE, drop_last=DROP_LAST)
     
-    #load model
-    model = get_model(MODEL, TASK, PRETRAINED, num_classes=NUM_CLASSES, output_range = OUTPUT_RANGE)
+    # #load model
+    # model = get_model(MODEL, TASK, PRETRAINED, num_classes=NUM_CLASSES, output_range = OUTPUT_RANGE)
 
-    model.to(DEVICE)
-    torch.compile(model)
+    # model.to(DEVICE)
+    # torch.compile(model)
     
 
-    val_loss = CombinedLoss(losses = VAL_LOSS, weights= VAL_WEIGHTS_LOSS, device=DEVICE, orange=OUTPUT_RANGE)
+    # val_loss = CombinedLoss(losses = VAL_LOSS, weights= VAL_WEIGHTS_LOSS, device=DEVICE, orange=OUTPUT_RANGE)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 
-    if LEARNING_SCHEDULER == "CosineAnnealingLR":
-        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=NUM_EPOCHS, verbose=True)
-    elif LEARNING_SCHEDULER == "ReduceLROnPlateau":
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
-    elif LEARNING_SCHEDULER == "StepLR":
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1, verbose=True)
-    elif LEARNING_SCHEDULER == "MultiStepLR":
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 20], gamma=0.1)
-    else:
-        lr_scheduler = None
+    # if LEARNING_SCHEDULER == "CosineAnnealingLR":
+    #     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=NUM_EPOCHS, verbose=True)
+    # elif LEARNING_SCHEDULER == "ReduceLROnPlateau":
+    #     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    # elif LEARNING_SCHEDULER == "StepLR":
+    #     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1, verbose=True)
+    # elif LEARNING_SCHEDULER == "MultiStepLR":
+    #     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 20], gamma=0.1)
+    # else:
+    #     lr_scheduler = None
 
-    early_stopper = EarlyStopper(patience=PATIENCE, min_delta=0.001)
+    # early_stopper = EarlyStopper(patience=PATIENCE, min_delta=0.001)
 
-    #train model
-    results = trainer(
-        model=model,
-        train_loader=_,
-        val_loader=_,
-        test_loader = _,
-        reconstruct_loader = reconstruct_loader,
-        train_loss_fn=None,
-        val_loss_fn = val_loss,
-        optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
-        lr_scheduler_name=LEARNING_SCHEDULER,
-        device=DEVICE,
-        epochs=NUM_EPOCHS,
-        save_dir=LOAD_DIR,
-        early_stopper=early_stopper,
-        val_per_epoch = VAL_PLOT_PER_EPOCH,
-        test_per_epoch = TEST_PLOT_PER_EPOCH,
-        pads = None,
-        test_dataset = test_dataset,
-        test_overlap = STRIDE,
-        image_size = IMAGE_SIZE,
-        final_dir = FINAL_DIR,
-        path = LOAD_DIR,
-        )
-    postprocess([results[0], results[1], results[2]], FINAL_DIR, 'airmag_denoised_5.csv', csv=CREATE_CSV)
+    # #train model
+    # results = trainer(
+    #     model=model,
+    #     train_loader=_,
+    #     val_loader=_,
+    #     test_loader = _,
+    #     reconstruct_loader = reconstruct_loader,
+    #     train_loss_fn=None,
+    #     val_loss_fn = val_loss,
+    #     optimizer=optimizer,
+    #     lr_scheduler=lr_scheduler,
+    #     lr_scheduler_name=LEARNING_SCHEDULER,
+    #     device=DEVICE,
+    #     epochs=NUM_EPOCHS,
+    #     save_dir=LOAD_DIR,
+    #     early_stopper=early_stopper,
+    #     val_per_epoch = VAL_PLOT_PER_EPOCH,
+    #     test_per_epoch = TEST_PLOT_PER_EPOCH,
+    #     pads = None,
+    #     test_dataset = test_dataset,
+    #     test_overlap = STRIDE,
+    #     image_size = IMAGE_SIZE,
+    #     final_dir = FINAL_DIR,
+    #     path = LOAD_DIR,
+    #     )
+
+    for path in PATHS:
+        print(path)
+        val_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        ])
+
+        test_data  = [path]
+        test_dataset = BrazilDatasetFinetuning(datasets=test_data, patch_dim=IMAGE_SIZE, fill_value=0, stride = STRIDE, transform=val_transform)
+        print(len(test_dataset))
+        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS, drop_last = DROP_LAST)
+        model = get_model(MODEL, TASK, PRETRAINED, num_classes=NUM_CLASSES, output_range = OUTPUT_RANGE)
+
+        model.to(DEVICE)
+        torch.compile(model)
+        
+
+        val_loss = CombinedLoss(losses = VAL_LOSS, weights= VAL_WEIGHTS_LOSS, device=DEVICE, orange=OUTPUT_RANGE)
+
+        #train model
+        results = trainer(
+            model=model,
+            train_loader=test_loader,
+            val_loader=test_loader,
+            test_loader = test_loader,
+            reconstruct_loader = test_loader,
+            train_loss_fn=None,
+            val_loss_fn = val_loss,
+            optimizer=None,
+            lr_scheduler=None,
+            lr_scheduler_name=LEARNING_SCHEDULER,
+            device=DEVICE,
+            epochs=NUM_EPOCHS,
+            save_dir=LOAD_DIR,
+            early_stopper=None,
+            val_per_epoch = VAL_PLOT_PER_EPOCH,
+            test_per_epoch = TEST_PLOT_PER_EPOCH,
+            pads = None,
+            test_dataset = test_dataset,
+            test_overlap = STRIDE,
+            image_size = IMAGE_SIZE,
+            final_dir = FINAL_DIR,
+            path = path,
+            )    
+        postprocess([results[0], results[1], results[2]], FINAL_DIR, 'brazil_val1_1113_04042025_checkpoint24_64.csv', csv=CREATE_CSV)
+
 if __name__ == "__main__":
     main()
 

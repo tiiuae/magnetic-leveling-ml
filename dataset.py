@@ -354,8 +354,8 @@ class BrazilDatasetFinetuning(Dataset):
 
 
         # Adjust padding to ensure the grid can be split into patches with given stride
-        new_width = math.ceil((padded_array.shape[0] - image_size) / stride) * stride + image_size
-        new_height = math.ceil((padded_array.shape[1] - image_size) / stride) * stride + image_size
+        new_width = max(math.ceil((padded_array.shape[0] - image_size) / stride) * stride,0) + image_size
+        new_height = max(math.ceil((padded_array.shape[1] - image_size) / stride),0) * stride + image_size
 
         pad_left = (new_width - padded_array.shape[0]) // 2
         pad_right = new_width - padded_array.shape[0] - pad_left

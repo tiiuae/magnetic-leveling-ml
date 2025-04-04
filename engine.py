@@ -17,7 +17,96 @@ import numpy as np
 import torch
 import numpy.ma as ma
 import matplotlib.image
+import numpy as np
+from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
+from sewar.full_ref import msssim  # Install with: pip install sewar
 
+def evaluate_denoising(original, noisy, denoised):
+    """
+    Compute various denoising quality metrics given original, noisy, and denoised images.
+
+    Args:
+        original (np.ndarray): The original clean image.
+        noisy (np.ndarray): The noisy input image.
+        denoised (np.ndarray): The denoised output image.
+
+    Returns:
+        list: A list containing the original, noisy, and denoised images,
+              along with their respective metrics.
+    """
+    
+    # Ensure images are in float format
+    original = original.astype(np.float32)
+    noisy = noisy.astype(np.float32)
+    denoised = denoised.astype(np.float32)
+
+    # Compute PSNR
+    noisy_psnr = psnr(original, noisy, data_range=noisy.max() - noisy.min())
+    denoised_psnr = psnr(original, denoised, data_range=denoised.max() - denoised.min())
+
+    # Compute SSIM
+    noisy_ssim = ssim(original, noisy, data_range=noisy.max() - noisy.min())
+    denoised_ssim = ssim(original, denoised, data_range=denoised.max() - denoised.min())
+
+    # Compute MAE (Mean Absolute Error)
+    noisy_l1 = np.mean(np.abs(noisy - original))
+    denoised_l1 = np.mean(np.abs(denoised - original))
+
+    # Compute MSE (Mean Squared Error)
+    noisy_mse = np.mean((noisy - original) ** 2)
+    denoised_mse = np.mean((denoised - original) ** 2)
+
+    # Compute RMSE (Root Mean Squared Error)
+    noisy_rmse = np.sqrt(noisy_mse)
+    denoised_rmse = np.sqrt(denoised_mse)
+
+    # Compute Residual Energy Ratio (RER) (Lower is better)
+    residual_original = noisy - original  # True noise
+    residual_denoised = noisy - denoised  # Leftover noise after denoising
+    rer = np.sum(residual_denoised ** 2) / np.sum(residual_original ** 2)
+
+    # Compute SNR (Signal-to-Noise Ratio) for Noisy and Denoised images
+    var_original = np.var(original)
+    var_residual_noisy = np.var(residual_original)
+    var_residual_denoised = np.var(residual_denoised)
+    
+    snr_noisy = 10 * np.log10(var_original / var_residual_noisy)
+    snr_denoised = 10 * np.log10(var_original / var_residual_denoised)
+    delta_snr = snr_denoised - snr_noisy  # Improvement in SNR
+
+    # Compute FSIM (Feature Similarity Index)
+    noisy_mssim = msssim(original, noisy, MAX=noisy.max() - noisy.min())
+    denoised_mssim = msssim(original, denoised, MAX=denoised.max() - denoised.min())
+
+
+
+    # Print all metrics with labels
+    print("Metrics for Image Denoising:")
+    print("Noisy Image vs. Denoised Image vs. Original Image:")
+    print(f"PSNR (Noisy vs Original): {noisy_psnr:.4f}, PSNR (Denoised vs Original): {denoised_psnr:.4f}")
+    print(f"SSIM (Noisy vs Original): {noisy_ssim:.4f}, SSIM (Denoised vs Original): {denoised_ssim:.4f}")
+    print(f"L1 Loss (Noisy vs Original): {noisy_l1:.4f}, L1 Loss (Denoised vs Original): {denoised_l1:.4f}")
+    print(f"MSE (Noisy vs Original): {noisy_mse:.4f}, MSE (Denoised vs Original): {denoised_mse:.4f}")
+    print(f"RMSE (Noisy vs Original): {noisy_rmse:.4f}, RMSE (Denoised vs Original): {denoised_rmse:.4f}")
+    print(f"Relative Error Ratio (RER): {rer:.4f}")
+    print(f"SNR (Noisy): {snr_noisy:.4f}, SNR (Denoised): {snr_denoised:.4f}")
+    print(f"Delta SNR (Denoised vs Noisy): {delta_snr:.4f}")
+    print(f"MSSIM (Noisy vs Original): {noisy_mssim:.4f}, MSSIM (Denoised vs Original): {denoised_mssim:.4f}")
+
+
+    # Return the results in the specified format
+    return [denoised, original, noisy, 
+            [
+                [noisy_psnr, denoised_psnr], 
+                [noisy_ssim, denoised_ssim], 
+                [noisy_l1, denoised_l1], 
+                [noisy_mse, denoised_mse], 
+                [noisy_rmse, denoised_rmse], 
+                [rer, rer],
+                [snr_noisy, snr_denoised], 
+                [delta_snr, delta_snr], 
+                [noisy_mssim, denoised_mssim], 
+            ]]
 
 def PSNR(preds, targets):
      maxi = max(preds.max(), targets.max())
@@ -291,6 +380,65 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         # print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
 
 
+        # # Mask invalid values
+        # masked_array = ma.masked_invalid(denoised_array)
+        # matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
+
+        # # Load arrays
+        # original_array = np.load(save_dir.get('path'))[:, :, 1]
+        # noisy_array = np.load(save_dir.get('path'))[:, :, 0]
+
+        # # Create mask
+        # mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
+
+        # # Convert to tensors
+        # # denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
+        # # original_tensor = torch.tensor(original_array, dtype=torch.float32)
+        # # noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
+        # # original_array = ((original_array - np.nanmin(original_array))/(np.nanmax(original_array) - np.nanmin(original_array)))
+        # # noisy_array = ((noisy_array - np.nanmin(noisy_array))/(np.nanmax(noisy_array) - np.nanmin(noisy_array)))
+        # # denoised_array = ((denoised_array - np.nanmin(denoised_array))/(np.nanmax(denoised_array) - np.nanmin(denoised_array)))
+
+        # # Apply mask
+        # denoised_array[~mask] = 0
+        # original_array[~mask] = 0
+        # noisy_array[~mask] = 0
+
+        # # # Reshape tensors
+        # # H, W = denoised_array.shape
+        # # denoised_tensor = denoised_tensor.view(1, 1, H, W)
+        # # original_tensor = original_tensor.view(1, 1, H, W)
+        # # noisy_tensor = noisy_tensor.view(1, 1, H, W)
+        # # denoised_array = denoised_array.astype(np.float32)
+        # # original_array = original_array.astype(np.float32)
+        # # noisy_array = noisy_array.astype(np.float32)
+        # # # Calculate PSNR, SSIM, L1
+
+        # # # maxi = max(denoised_array.max(), original_array.max(), noisy_array.max())
+        # # # mini = min(denoised_array.min(), original_array.min(), noisy_array.min())
+
+        # # # noisy_psnr, denoised_psnr = psnr(noisy_array, original_array, data_range=maxi -mini), psnr(denoised_array, original_array, data_range = maxi - mini)
+        # # # noisy_ssim, denoised_ssim = ssim(noisy_array, original_array, data_range=maxi - mini), ssim(denoised_array, original_array, data_range=maxi - mini)
+        # # # noisy_l1, denoised_l1 = np.mean(np.abs(noisy_array - original_array)), np.mean(np.abs(denoised_array - original_array))
+
+        # # maxi = max((noisy_array - original_array).max(), (noisy_array - denoised_array).max())
+        # # mini = min((noisy_array - original_array).min(), (noisy_array - denoised_array).min())
+
+        # # psnr, denoised_psnr = psnr(noisy_array, original_array, data_range=maxi -mini), psnr(denoised_array, original_array, data_range = maxi - mini)
+        # # # noisy_ssim, denoised_ssim = ssim(noisy_array, original_array, data_range=maxi - mini), ssim(denoised_array, original_array, data_range=maxi - mini)
+        # # # noisy_l1, denoised_l1 = np.mean(np.abs(noisy_array - original_array)), np.mean(np.abs(denoised_array - original_array))
+
+        # # # Print results
+        # # print(f"Noisy PSNR: {noisy_psnr}, Denoised PSNR: {denoised_psnr}")
+        # # print(f"Noisy SSIM: {noisy_ssim}, Denoised SSIM: {denoised_ssim}")
+        # # print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
+        # metrics = evaluate_denoising(original_array, noisy_array, denoised_array)
+
+
+        # return metrics
+
+
+
         # Mask invalid values
         masked_array = ma.masked_invalid(denoised_array)
         matplotlib.image.imsave(f'{final_dir}/denoised_{file_name}.png', masked_array)
@@ -333,7 +481,9 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         print(f"Noisy PSNR: {noisy_psnr}, Denoised PSNR: {denoised_psnr}")
         print(f"Noisy SSIM: {noisy_ssim}, Denoised SSIM: {denoised_ssim}")
         print(f"Noisy L1: {noisy_l1}, Denoised L1: {denoised_l1}")
-
+        denoised_array[~mask] = np.nan
+        original_array[~mask] = np.nan
+        noisy_array[~mask] = np.nan
 
         return [denoised_array, original_array, noisy_array, [[noisy_psnr, denoised_psnr], [noisy_ssim, denoised_ssim], [noisy_l1, denoised_l1]]]
 
