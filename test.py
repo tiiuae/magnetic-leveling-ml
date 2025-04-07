@@ -182,7 +182,7 @@ def main():
             final_dir = FINAL_DIR,
             path = path,
             )    
-        postprocess([results[0], results[1], results[2]], FINAL_DIR, 'brazil_val1_1113_04042025_checkpoint24_64.csv', csv=CREATE_CSV)
+        postprocess([results[0], results[1], results[2]], FINAL_DIR, 'brazil_val1_1113_04042025_checkpoint16_32.csv', csv=CREATE_CSV)
 
 if __name__ == "__main__":
     main()

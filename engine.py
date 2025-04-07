@@ -395,9 +395,6 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         # # denoised_tensor = torch.tensor(denoised_array, dtype=torch.float32)
         # # original_tensor = torch.tensor(original_array, dtype=torch.float32)
         # # noisy_tensor = torch.tensor(noisy_array, dtype=torch.float32)
-        # # original_array = ((original_array - np.nanmin(original_array))/(np.nanmax(original_array) - np.nanmin(original_array)))
-        # # noisy_array = ((noisy_array - np.nanmin(noisy_array))/(np.nanmax(noisy_array) - np.nanmin(noisy_array)))
-        # # denoised_array = ((denoised_array - np.nanmin(denoised_array))/(np.nanmax(denoised_array) - np.nanmin(denoised_array)))
 
         # # Apply mask
         # denoised_array[~mask] = 0
@@ -446,6 +443,10 @@ def rec_step(model, test_dataset, reconstruct_loader,device, save_dir, IMAGE_SIZ
         # Load arrays
         original_array = np.load(save_dir.get('path'))[:, :, 1]
         noisy_array = np.load(save_dir.get('path'))[:, :, 0]
+
+        # original_array = ((original_array - np.nanmin(original_array))/(np.nanmax(original_array) - np.nanmin(original_array)))
+        # noisy_array = ((noisy_array - np.nanmin(noisy_array))/(np.nanmax(noisy_array) - np.nanmin(noisy_array)))
+        # denoised_array = ((denoised_array - np.nanmin(denoised_array))/(np.nanmax(denoised_array) - np.nanmin(denoised_array)))
 
         # Create mask
         mask = ~np.isnan(denoised_array) & ~np.isnan(original_array) & ~np.isnan(noisy_array)
