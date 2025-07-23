@@ -10,8 +10,8 @@ cd magnetic-leveling-ml
 
 2. Create and activate the Conda environment:
 ---------------------------------------------
-conda create -n maglev python=3.10 -y
-conda activate maglev
+    conda create -n maglev python=3.10 -y
+    conda activate maglev
 
 3. Install dependencies:
 ------------------------
@@ -22,11 +22,11 @@ conda activate maglev
 
 1. To train the model:
 -----------------------
-python train.py
+    python train.py
 
 2. To test the model:
 ----------------------
-python test.py
+    python test.py
 
 
 ## Notes
