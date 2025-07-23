@@ -1,8 +1,7 @@
 This repository contains the code for the paper "Deep learning-based approach for Leveling Airborne Magnetic Data".
 
-========================================
-Setup Instructions
-========================================
+
+##Setup Instructions
 
 1. Clone the repository:
 -------------------------
@@ -19,9 +18,7 @@ conda activate maglev
     pip install -r requirements.txt
 
 
-========================================
-Running the Scripts
-========================================
+##Running the Scripts
 
 1. To train the model:
 -----------------------
